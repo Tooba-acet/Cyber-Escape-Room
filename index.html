@@ -386,7 +386,7 @@ let board = [];        // [{id, name, best, bestTime, mistakes, hints, attempts,
    GAS    = served as a Google Apps Script web app (public link; players type name + email; rows go to a Google Sheet)
    Claude = published as a Claude artifact (players are identified by their Claude account) */
 /* PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL BETWEEN THE QUOTES (ends in /exec) */
-const SCORES_API = "PASTE_WEB_APP_URL_HERE";
+const SCORES_API = "https://script.google.com/macros/s/AKfycbxyfnkbQTI0o9hZm26q6DbWBiSNQMnwOIpmKIFhkqrkmCA-OylLTgdWtLLKA-XWlOhc/exec";
 const GAME_ID = "full";
 const API_ON = /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(SCORES_API);
 const GAS_NATIVE = !!(window.google && google.script && google.script.run);
