@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cyber Escape Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: an office floor plan on blueprint paper; each room is a colour-coded door that unlocks one digit of the vault code. Single bright theme by choice. */
+:root{
+  color-scheme: light;
+  --paper:#EAF0FF; --grid:#D3DDF7; --card:#FFFFFF; --ink:#16204A; --muted:#55608A;
+  --coral:#FF5E3A; --teal:#0FA89A; --mustard:#F2B300; --violet:#7650F0; --cobalt:#2456E8;
+  --good:#11865B; --goodbg:#DDF6EA; --bad:#C8321B; --badbg:#FFE3DC;
+  --display:"Bungee","Arial Black",Impact,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --shadow:4px 4px 0 var(--ink);
+  --room:var(--cobalt);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;min-height:100vh}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:14px 48px}
+h1,h2,h3{text-wrap:balance;margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--cobalt);outline-offset:2px}
+
+/* Top bar */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;justify-content:space-between;margin-bottom:18px}
+.brand{font-family:var(--display);font-size:22px;letter-spacing:.5px;display:flex;align-items:center;gap:10px}
+.brand .lock{width:30px;height:30px;border:3px solid var(--ink);border-radius:8px;background:var(--mustard);display:grid;place-items:center;box-shadow:2px 2px 0 var(--ink)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:2px solid var(--ink);background:var(--card);padding:6px 12px;border-radius:999px;font-weight:700;font-size:14px}
+.tab[aria-selected="true"]{background:var(--ink);color:#fff}
+.hud{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-family:var(--mono);font-size:13px;font-weight:700;border:2px solid var(--ink);background:var(--card);border-radius:8px;padding:4px 10px;font-variant-numeric:tabular-nums}
+.chip.t{background:var(--mustard)}
+
+/* Panels */
+.panel{background:var(--card);border:3px solid var(--ink);border-radius:14px;box-shadow:var(--shadow);padding:22px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.btn{border:3px solid var(--ink);background:var(--room);color:#fff;font-weight:700;padding:10px 18px;border-radius:10px;box-shadow:3px 3px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--ink)}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn.ghost{background:var(--card);color:var(--ink)}
+.btn.big{font-size:18px;padding:13px 24px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+
+/* Intro */
+.hero{display:grid;grid-template-columns:1.3fr 1fr;gap:22px;align-items:stretch}
+.hero h1{font-family:var(--display);font-size:clamp(30px,6vw,52px);line-height:1.02;margin:8px 0 12px;color:var(--ink)}
+.hero h1 span{color:var(--coral)}
+.alarm{background:var(--ink);color:#fff;border-radius:14px;border:3px solid var(--ink);box-shadow:var(--shadow);padding:18px;font-family:var(--mono);font-size:13px;display:flex;flex-direction:column;gap:6px}
+.alarm .blink{color:var(--mustard);font-weight:700}
+.rules{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}
+.rule{border:2px solid var(--ink);border-radius:12px;padding:12px;background:var(--card)}
+.rule b{font-family:var(--mono);font-size:20px;display:block}
+.doors{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:18px}
+.door{border:3px solid var(--ink);border-radius:12px 12px 4px 4px;padding:12px 10px;background:var(--c);color:#fff;min-height:150px;display:flex;flex-direction:column;justify-content:space-between;position:relative;box-shadow:3px 3px 0 var(--ink);text-align:left}
+.door.ink{color:var(--ink)}
+.door .num{font-family:var(--mono);font-size:12px;font-weight:700;opacity:.9}
+.door h3{font-family:var(--display);font-size:15px;line-height:1.1;font-weight:400}
+.door .topic{font-size:13px;line-height:1.3}
+.door{padding-right:26px}
+.door .knob{position:absolute;right:10px;top:50%;width:10px;height:10px;border-radius:50%;background:var(--ink);border:2px solid #fff}
+.door.locked{filter:saturate(.25) brightness(1.05);opacity:.75}
+.door .state{font-family:var(--mono);font-size:12px;font-weight:700;background:rgba(0,0,0,.22);border-radius:6px;padding:2px 6px;align-self:flex-start}
+.door.ink .state{background:rgba(255,255,255,.55)}
+.door.done .state{background:#fff;color:var(--ink)}
+
+/* Puzzle screen */
+.roomhead{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;border-bottom:3px dashed var(--room);padding-bottom:12px;margin-bottom:16px}
+.roomhead h2{font-family:var(--display);font-weight:400;font-size:24px;color:var(--room)}
+.pips{display:flex;gap:6px}
+.pip{width:26px;height:10px;border-radius:5px;border:2px solid var(--ink);background:var(--card)}
+.pip.on{background:var(--room)}
+.pip.cur{background:repeating-linear-gradient(45deg,var(--room) 0 4px,var(--card) 4px 8px)}
+.prompt{font-size:19px;font-weight:700;margin:4px 0 14px;max-width:70ch}
+.story{background:var(--paper);border-left:6px solid var(--room);border-radius:8px;padding:12px 14px;margin-bottom:14px;max-width:75ch}
+.opts{display:grid;gap:10px}
+.opt{text-align:left;border:2px solid var(--ink);background:var(--card);border-radius:10px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start}
+.opt:hover:not(:disabled){background:var(--paper)}
+.opt .k{font-family:var(--mono);font-weight:700;border:2px solid var(--ink);border-radius:6px;min-width:28px;height:28px;display:grid;place-items:center;font-size:13px;flex:none}
+.opt.sel{background:#E4EBFF;border-color:var(--cobalt)}
+.opt.sel .k{background:var(--cobalt);color:#fff;border-color:var(--cobalt)}
+.opt.ok{background:var(--goodbg);border-color:var(--good)}
+.opt.no{background:var(--badbg);border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.why{font-size:14px;margin-top:4px;display:block}
+.fb{margin-top:14px;border-radius:10px;padding:12px 14px;border:2px solid var(--ink);font-size:15px}
+.fb.ok{background:var(--goodbg);border-color:var(--good)}
+.fb.no{background:var(--badbg);border-color:var(--bad)}
+.fb.hint{background:#FFF4CC;border-color:var(--mustard)}
+.fb b{display:block;margin-bottom:2px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-top:18px}
+.cost{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+/* Email hotspot */
+.mail{border:2px solid var(--ink);border-radius:12px;overflow:hidden;max-width:680px;background:#fff}
+.mail .bar{background:#F1F3F9;border-bottom:2px solid var(--ink);padding:10px 14px;display:grid;gap:4px;font-size:14px}
+.mail .body{padding:14px;display:grid;gap:10px;font-size:15px}
+.spot{border:2px dashed transparent;background:transparent;border-radius:6px;padding:1px 4px;text-align:left;font:inherit;display:inline}
+.spot:hover:not(:disabled){border-color:var(--cobalt);background:#EEF2FF}
+.spot.found{background:var(--badbg);border:2px solid var(--bad)}
+.spot.safe{background:#F2F2F2;border:2px solid #B8BCCB;color:var(--muted)}
+.cta{display:inline-block;background:#0B63CE;color:#fff;padding:8px 14px;border-radius:6px;font-weight:700}
+.found-list{margin:12px 0 0;padding-left:20px;display:grid;gap:4px;font-size:14px}
+.counter{font-family:var(--mono);font-weight:700;background:var(--ink);color:#fff;border-radius:6px;padding:2px 8px;font-size:13px}
+
+/* Desk scene */
+.desk{position:relative;border:3px solid var(--ink);border-radius:14px;background:linear-gradient(#C99A6B,#B9855A);aspect-ratio:16/9;max-width:100%;overflow:hidden}
+.desk .wall{position:absolute;inset:0 0 58% 0;background:#DCE6FB;border-bottom:3px solid var(--ink)}
+.item{position:absolute;border:2px solid var(--ink);border-radius:8px;background:#fff;font-size:clamp(9px,1.6vw,13px);line-height:1.15;padding:4px 6px;font-weight:700;text-align:center;display:grid;place-items:center;box-shadow:2px 2px 0 rgba(22,32,74,.5)}
+.item:hover:not(:disabled){outline:3px solid var(--cobalt)}
+.item.found{outline:3px solid var(--bad);background:var(--badbg)}
+.item.safe{opacity:.55}
+.item .tag{display:block;font-family:var(--mono);font-size:.85em;font-weight:500}
+
+/* Assign / order */
+.cards{display:grid;gap:10px}
+.card{border:2px solid var(--ink);border-radius:10px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:var(--card)}
+.card.no{background:var(--badbg);border-color:var(--bad)}
+.card.ok{background:var(--goodbg);border-color:var(--good)}
+.card .txt{min-width:0}
+.seg{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.seg button{border:2px solid var(--ink);background:var(--card);border-radius:8px;padding:5px 10px;font-weight:700;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--room);color:#fff}
+.ord{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.ord .n{font-family:var(--display);font-size:22px;color:var(--room);width:30px;text-align:center}
+.ord .mv{display:flex;gap:4px}
+.ord .mv button{border:2px solid var(--ink);background:var(--card);border-radius:6px;width:34px;height:34px;font-weight:700}
+.pw{font-family:var(--mono);font-weight:700;font-size:16px;word-break:break-all}
+
+/* Lightning + keypad */
+.lt{display:grid;gap:14px;justify-items:center;text-align:center}
+.lt .q{font-size:22px;font-weight:700;max-width:34ch}
+.meter{width:100%;max-width:520px;height:14px;border:2px solid var(--ink);border-radius:8px;overflow:hidden;background:var(--card)}
+.meter i{display:block;height:100%;background:var(--coral);transition:width .2s linear}
+.tf{display:flex;gap:12px}
+.tf .btn{min-width:130px}
+.vault{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+.dots{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.dot{width:46px;height:46px;border-radius:50%;border:3px solid var(--ink);box-shadow:2px 2px 0 var(--ink)}
+.digits{display:flex;gap:8px;margin-bottom:12px}
+.digits span{width:52px;height:62px;border:3px solid var(--ink);border-radius:10px;display:grid;place-items:center;font-family:var(--mono);font-size:28px;font-weight:700;background:#fff}
+.keys{display:grid;grid-template-columns:repeat(3,64px);gap:8px}
+.keys button{height:54px;border:3px solid var(--ink);border-radius:10px;background:var(--card);font-family:var(--mono);font-size:20px;font-weight:700;box-shadow:2px 2px 0 var(--ink)}
+.keys button:active{transform:translate(2px,2px);box-shadow:none}
+.collected{display:grid;gap:6px}
+.collected div{display:flex;gap:10px;align-items:center;font-size:15px}
+.collected i{width:18px;height:18px;border-radius:50%;border:2px solid var(--ink);display:inline-block}
+.collected b{font-family:var(--mono);font-size:18px}
+
+/* Room complete + results */
+.digitbig{font-family:var(--display);font-size:96px;line-height:1;color:var(--room);text-shadow:4px 4px 0 var(--ink);margin:8px 0}
+.lesson{background:var(--paper);border-radius:10px;padding:12px 14px;border:2px solid var(--ink);max-width:62ch}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}
+.stat{border:2px solid var(--ink);border-radius:10px;padding:10px 12px;background:var(--card)}
+.stat b{display:block;font-family:var(--mono);font-size:24px;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.score{font-family:var(--display);font-size:clamp(48px,10vw,84px);line-height:1;color:var(--coral);text-shadow:4px 4px 0 var(--ink)}
+.tooba{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:2px solid var(--ink);border-radius:12px;padding:12px 14px;max-width:72ch}
+.tooba .av{flex:none;width:42px;height:42px;border-radius:50%;background:var(--violet);color:#fff;border:2px solid var(--ink);display:grid;place-items:center;font-family:var(--display);font-size:18px}
+.tooba .who{font-weight:700;font-size:14px}
+.tooba .role{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tooba p{margin:4px 0 0}
+.field{display:grid;gap:4px;margin-bottom:12px}
+.field label{font-weight:700;font-size:14px}
+.field input{font:inherit;border:2px solid var(--ink);border-radius:8px;padding:10px 12px;background:#fff;color:var(--ink);width:100%;max-width:420px}
+.field .err{color:var(--bad);font-size:13px}
+.notice{border:2px dashed var(--ink);border-radius:10px;padding:10px 12px;background:#FFF4CC;font-size:14px}
+
+/* Tables */
+.tablewrap{overflow-x:auto;border:2px solid var(--ink);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--grid);white-space:nowrap}
+th{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.06em;background:#F3F6FF;color:var(--muted)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+tr.me td{background:#FFF4CC}
+.who{display:flex;gap:8px;align-items:center}
+.who img{width:24px;height:24px;border-radius:50%;border:2px solid var(--ink)}
+.medal{font-family:var(--display);font-size:16px;width:28px;display:inline-block}
+.bars{display:grid;gap:10px}
+.barrow{display:grid;grid-template-columns:170px 1fr 70px;gap:10px;align-items:center;font-size:14px}
+.bartrack{height:18px;border:2px solid var(--ink);border-radius:6px;background:var(--card);overflow:hidden}
+.bartrack i{display:block;height:100%}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;max-width:min(560px,calc(100% - 32px));z-index:60;box-shadow:3px 3px 0 var(--coral)}
+.shake{animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pop{animation:pop .4s ease-out}
+@keyframes pop{0%{transform:scale(.6);opacity:.4}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.shake,.pop{animation:none}.btn{transition:none}}
+
+@media (max-width:760px){
+  .hero,.vault{grid-template-columns:1fr}
+  .rules,.stats{grid-template-columns:repeat(2,1fr)}
+  .doors{grid-template-columns:repeat(2,1fr)}
+  .card{grid-template-columns:1fr}
+  .seg{justify-content:flex-start}
+  .barrow{grid-template-columns:1fr 70px}
+  .barrow .bartrack{grid-column:1/-1;grid-row:2}
+  .panel{padding:16px}
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="lock" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16"><rect x="2" y="7" width="12" height="8" rx="2" fill="#16204A"/><path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="#16204A" stroke-width="2" fill="none"/></svg></span>Cyber Escape Room</div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" id="tab-play" aria-selected="true">Play</button>
+      <button class="tab" role="tab" id="tab-board" aria-selected="false">Leaderboard</button>
+      <button class="tab" role="tab" id="tab-admin" aria-selected="false" hidden>Team results</button>
+    </nav>
+    <div class="hud" id="hud" hidden>
+      <span class="chip t" id="hud-time">00:00</span>
+      <span class="chip" id="hud-score">0 pts</span>
+      <button class="chip" id="hud-sound" aria-pressed="true" title="Sound on or off">Sound: on</button>
+    </div>
+  </header>
+  <main id="stage"></main>
+</div>
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<script>
+/* =========================== CONTENT =========================== */
+const ROOMS = [
+ { id:"bd", name:"Reception", short:"Reception", guide:"Reception handles more outside calls, visitors and email than anyone else, and that is where the attack started. Find out how the attackers got in.", topic:"Phishing & social engineering", color:"#FF5E3A", ink:false, digit:7,
+   intro:"The alarm started here. Someone opened a message they shouldn't have. Find out how the attackers got in.",
+   lesson:"Slow down when a message pushes urgency, secrecy, or a login. Verify through a channel you already trust, such as the intranet phone list, and report anything suspicious.",
+   puzzles:[
+   { type:"hotspot-mail", prompt:"This email reached 40 inboxes this morning. Click every red flag in it.",
+     hint:"Check who sent it, where the button really goes, and the full file name of the attachment.",
+     spots:{
+       from:{bad:true, why:"The sender domain is micros0ft-helpdesk.co, with a zero in place of the letter o. Real Microsoft mail does not come from look-alike domains."},
+       subject:{bad:true, why:"A countdown threat (\"deleted in 2 hours\") is designed to make you act before you think."},
+       greet:{bad:true, why:"\"Dear user\" is a generic greeting. Services you use normally address you by name."},
+       link:{bad:true, why:"The button text says Microsoft, but the link goes to login-secure.ru. Hover over links before clicking to see the real destination."},
+       attach:{bad:true, why:"Mailbox_Report.pdf.exe is a program disguised as a PDF. A double extension ending in .exe will run code on your computer."},
+       to:{bad:false, why:"Your own address in the To line is normal."},
+       date:{bad:false, why:"A weekday morning timestamp is normal."},
+       sign:{bad:false, why:"A sign-off alone is not a red flag."}
+     }},
+   { type:"assign", prompt:"Five messages arrived during the attack. Label each one Phish or Legit.", labels:["Phish","Legit"],
+     hint:"Look for pressure, secrecy, payment requests, and anything that arrives outside a channel you already use.",
+     items:[
+       {t:"A sticker with a QR code is stuck over the car park sign: \"Scan to validate free parking.\"", a:"Phish", why:"QR phishing (\"quishing\") hides a malicious link behind a code you cannot read. Stickers placed over official signs are a known trick."},
+       {t:"A voice note from the CEO: \"I'm in a meeting, buy five gift cards for a client and send me the codes. Keep this between us.\"", a:"Phish", why:"Gift cards plus secrecy is classic CEO fraud. Voices can be cloned from a few seconds of public audio, so verify by calling back on a known number."},
+       {t:"A teammate shares the slide deck you asked for, inside your existing project channel.", a:"Legit", why:"Expected content, from a known colleague, in a channel you already use."},
+       {t:"SMS: \"Your parcel is on hold. Pay a 1.99 customs fee at dhl-redelivery-pay.com.\"", a:"Phish", why:"Smishing uses small payments to collect card details. Courier fees are paid on the courier's official site or app."},
+       {t:"Tooba sends a calendar invite for this year's security awareness training through the usual Outlook calendar. It asks for nothing.", a:"Legit", why:"It comes from a known colleague through the normal system, and asks for no credentials, payment, or files."}
+     ]},
+   { type:"choice", story:"Your desk phone rings. \"Hi, I'm calling from the IT helpdesk. We're migrating your account and I've just sent a code to your phone. Read it back to me so I can finish.\"",
+     prompt:"What do you do?", hint:"Who should ever see a one-time code besides you?",
+     options:[
+       {t:"Read the code out. The caller knows about the migration, so it must be real.", ok:false, why:"Knowing internal details proves nothing; that information is easy to gather. IT never needs your one-time code."},
+       {t:"Ask the caller to email the request instead.", ok:false, why:"Email can be spoofed too. Verify through a channel you choose, not one the caller offers."},
+       {t:"Hang up, call IT on the number from the intranet, and report the call.", ok:true, why:"A one-time code is for you alone. Calling back on a number you already trust beats any pretext, and the report lets security warn others."},
+       {t:"Read out an old code to test whether the caller is genuine.", ok:false, why:"Engaging with the caller gives them more time and information. End the call and report it."}
+     ]}
+   ]},
+ { id:"it", name:"IT Room", short:"IT", guide:"The attackers are now trying to sign in to our systems with stolen passwords. Lock the accounts down before they get further.", topic:"Passwords & MFA", color:"#0FA89A", ink:false, digit:3,
+   intro:"The attackers tried to reach the servers using stolen passwords. Lock the accounts down.",
+   lesson:"Length beats clever symbols. Use a password manager to create a unique passphrase for every account, turn on MFA, and treat an MFA prompt you didn't start as an alarm.",
+   puzzles:[
+   { type:"order", prompt:"Rank these passwords from weakest (1) to strongest (4).",
+     hint:"Attackers try common words, years, and letter swaps such as 0 for o first. Length makes guessing much harder.",
+     items:["admin","Welcome2026","W3lc0me2026!","cactus-umbrella-orbit-violin-42"],
+     why:"\"admin\" is in every attack list. A word plus a year is the next thing attackers try. Swapping letters for symbols adds little, because cracking tools try those swaps automatically. A long passphrase of random words is both the hardest to crack and the easiest to remember."},
+   { type:"choice", story:"It's 2:13 AM. Your phone buzzes with a seventh \"Approve sign-in?\" request. You are not trying to sign in.",
+     prompt:"What do you do?", hint:"If someone else is triggering the prompts, what do they already have?",
+     options:[
+       {t:"Approve it so the notifications stop.", ok:false, why:"This is MFA fatigue. Approving even once hands the attacker your account."},
+       {t:"Ignore it and go back to sleep.", ok:false, why:"The prompts mean someone already has your password. Ignoring them leaves that password working."},
+       {t:"Deny it, report it to the security team, and change your password.", ok:true, why:"Repeated prompts you didn't start mean your password is compromised. Deny, report, and reset it."},
+       {t:"Turn off MFA on your account.", ok:false, why:"MFA is the one control stopping the attacker right now. Turning it off opens the door."}
+     ]},
+   { type:"multi", prompt:"Select every habit that keeps your accounts safe.",
+     hint:"Three of these six are good habits.",
+     items:[
+       {t:"Use a password manager to generate a unique password for every account", ok:true, why:"Unique passwords stop one breach from unlocking everything."},
+       {t:"Reuse one very strong password everywhere", ok:false, why:"When one site leaks it, attackers try it on every other service (credential stuffing)."},
+       {t:"Turn on MFA, preferring an authenticator app or passkey over SMS", ok:true, why:"App-based MFA and passkeys resist SIM-swap and phishing better than text codes."},
+       {t:"Share your password with a teammate covering your work", ok:false, why:"Use delegated access instead. Shared passwords cannot be traced or revoked."},
+       {t:"Change your password straight away when a breach alert names it", ok:true, why:"Fast changes close the window before attackers use the leaked password."},
+       {t:"Keep passwords in a spreadsheet called passwords.xlsx", ok:false, why:"Anyone who reaches that file gets every account at once."}
+     ]}
+   ]},
+ { id:"hr", name:"HR & Admin Room", short:"HR & Admin", guide:"Someone followed a colleague through the HR & Admin door without badging in, then photographed a desk. Find what they could have taken.", topic:"Data handling & clean desk", color:"#F2B300", ink:true, digit:9,
+   intro:"An intruder walked in behind an employee and photographed a desk. Find what they could take.",
+   lesson:"Lock your screen when you step away, clear sensitive papers, label data by sensitivity, and hand unknown USB devices to IT unopened.",
+   puzzles:[
+   { type:"hotspot-desk", prompt:"Click every security risk on this desk.",
+     hint:"There are five risks. Look for credentials, open screens, and anything someone could carry away.",
+     spots:{
+       note:{label:"Sticky note", tag:"VPN: Blue$ky88", bad:true, x:6, y:8, w:16, h:22, why:"A password on a sticky note is readable by anyone walking past, including cleaners, visitors, and intruders."},
+       laptop:{label:"Laptop", tag:"Payroll.xlsx open", bad:true, x:30, y:36, w:28, h:32, why:"An unlocked screen gives anyone your access. Press Windows+L or Ctrl+Cmd+Q every time you step away."},
+       print:{label:"Printer tray", tag:"Customer list", bad:true, x:66, y:44, w:18, h:20, why:"Printouts left in a tray leak data. Collect them straight away or use secure print release."},
+       usb:{label:"USB stick", tag:"Salaries 2026", bad:true, x:14, y:72, w:16, h:16, why:"Unencrypted removable media with sensitive data can be lost or pocketed in seconds."},
+       badge:{label:"ID badge", tag:"left on desk", bad:true, x:62, y:74, w:16, h:16, why:"An unattended badge lets someone enter secure areas as you."},
+       mug:{label:"Coffee mug", tag:"", bad:false, x:4, y:44, w:12, h:18, why:"A mug is not a security risk."},
+       plant:{label:"Plant", tag:"", bad:false, x:84, y:8, w:12, h:28, why:"Plants are safe."},
+       cabinet:{label:"Filing cabinet", tag:"locked", bad:false, x:86, y:60, w:12, h:34, why:"A locked cabinet is good practice."},
+       shred:{label:"Shred bin", tag:"locked", bad:false, x:38, y:76, w:16, h:16, why:"A locked shred bin is exactly where old papers belong."}
+     }},
+   { type:"assign", prompt:"Match each document to its data classification.", labels:["Public","Internal","Confidential","Restricted"],
+     note:"Classification labels vary between companies. Check your own data policy for the exact names.",
+     hint:"Ask what harm would follow if the document leaked: none, minor, serious, or severe.",
+     items:[
+       {t:"The annual report published on the company website", a:"Public", why:"Already approved for anyone to read."},
+       {t:"The office seating plan and team chart", a:"Internal", why:"Fine to share with staff, but not meant for outsiders."},
+       {t:"A client contract with negotiated pricing", a:"Confidential", why:"A leak could harm the client relationship and the company's position."},
+       {t:"Employee medical records and national ID numbers", a:"Restricted", why:"Highly sensitive personal data with legal protection. A leak causes serious harm to people."}
+     ]},
+   { type:"choice", story:"In the car park you find a USB stick labelled \"Q4 Bonus List\".",
+     prompt:"What do you do with it?", hint:"Attackers drop infected USB sticks with tempting labels on purpose.",
+     options:[
+       {t:"Plug it into your work laptop to find the owner.", ok:false, why:"USB drops are a real attack. Plugging it in can install malware the moment the stick connects."},
+       {t:"Check it on your home computer instead.", ok:false, why:"Your home device can be infected too, and it may connect to work accounts."},
+       {t:"Hand it to IT or security without plugging it in.", ok:true, why:"Security can examine it safely and check whether the company is being targeted."},
+       {t:"Throw it in the bin.", ok:false, why:"Someone else may pick it up, and security loses the chance to spot a targeted attack."}
+     ]}
+   ]},
+ { id:"eng", name:"Engineering Team Room", short:"Engineering", guide:"Ransomware has appeared on an engineer's laptop. Contain it, report it, and keep our code and data out of unapproved tools.", topic:"Incident reporting & AI use", color:"#7650F0", ink:false, digit:4,
+   intro:"Ransomware is spreading. Contain it, report it, and keep company data out of unapproved tools.",
+   lesson:"Report early, even if you think you made a mistake; speed limits the damage. Use only company-approved AI tools, and never paste in personal data, client data, or secrets.",
+   puzzles:[
+   { type:"order", prompt:"A ransom note fills your screen. Put your response in the right order.",
+     hint:"Stop the damage spreading before you do anything else, and leave the evidence in place.",
+     items:["Take your hands off: don't click, pay, or try to decrypt anything","Disconnect from the network (cable out, Wi-Fi off) and leave the device powered on","Photograph the screen and report to the security team immediately","Follow the incident team's instructions; don't wipe, reboot, or delete files"],
+     why:"Stopping first prevents accidental clicks. Disconnecting limits the spread while keeping memory evidence. A fast report starts the response, and leaving the device alone preserves what investigators need."},
+   { type:"multi", prompt:"Which of these are safe to paste into a public AI chatbot your company has not approved?",
+     hint:"Two are safe. Anything personal, confidential, or secret stays out.",
+     items:[
+       {t:"\"Explain the difference between VLOOKUP and XLOOKUP.\"", ok:true, why:"A general question with no company data."},
+       {t:"A client spreadsheet with names, emails, and account balances", ok:false, why:"Personal and client data can be stored or used to train models outside company control."},
+       {t:"Source code that includes an API key", ok:false, why:"Secrets pasted into a chatbot are exposed. The key must be rotated if this happens."},
+       {t:"A paragraph from a press release that is already public", ok:true, why:"The content is already public."},
+       {t:"A draft performance review for a named colleague", ok:false, why:"Personal HR information about a real person."}
+     ]},
+   { type:"choice", story:"Two days ago you typed your password into a page that turned out to be fake. Nothing bad seems to have happened.",
+     prompt:"What now?", hint:"Attackers often wait before they use stolen credentials.",
+     options:[
+       {t:"Wait and see. If nothing happens this week, forget it.", ok:false, why:"Attackers often wait before using stolen credentials. Every day of delay helps them."},
+       {t:"Change your password quietly and say nothing.", ok:false, why:"Security still needs to check sign-ins, mail rules, and other systems the attacker may have reached."},
+       {t:"Report it to the security team now and change your password.", ok:true, why:"Early reports limit the damage. Good security teams treat reporting as help, not blame."},
+       {t:"Delete the email so nobody else clicks it.", ok:false, why:"Deleting removes evidence security needs to block the sender and warn others."}
+     ]}
+   ]}
+];
+const VAULT = { id:"vault", name:"Shared Meeting Room", short:"Meeting Room", guide:"You have all four digits. The exit control panel is in the Shared Meeting Room. Answer the lightning round, then enter the code to release the doors.", topic:"Mixed lightning round", color:"#2456E8",
+  questions:[
+   {q:"A padlock icon in the browser means the website is safe.", a:false, why:"The padlock only means the connection is encrypted. Most phishing sites use HTTPS too."},
+   {q:"Attackers can clone a voice from a few seconds of audio.", a:true, why:"Voice cloning is cheap and fast. Verify unusual requests by calling back on a known number."},
+   {q:"Tailgating means following someone through a secure door without badging in.", a:true, why:"Politely ask the person to badge in, or direct them to reception."},
+   {q:"Approving an MFA prompt you didn't start is harmless if you change your password later.", a:false, why:"Approving gives the attacker a live session immediately. Deny and report."},
+   {q:"Reporting a mistake quickly helps the security team more than hiding it.", a:true, why:"Speed is the biggest factor in limiting damage."},
+   {q:"An email from a colleague's real account can still be a phishing attack.", a:true, why:"Compromised accounts are used to phish their contacts. Judge the request, not only the sender."}
+  ]};
+const CODE_ORDER = ["it","bd","eng","hr"]; // colour order shown on the exit panel
+const VAULT_CODE = CODE_ORDER.map(id=>ROOMS.find(r=>r.id===id).digit).join("");
+const ALL_IDS = [...ROOMS.map(r=>r.id),"vault"];
+const LT_SECONDS = 12;
+
+/* =========================== STATE =========================== */
+let S = null;          // current run
+let tab = "play";
+let screen = "intro";
+let sound = true;
+let timerId = null, ltTimer = null;
+let cap = { db:null, user:null, downloads:null, uid:null, isOwner:false };
+let board = [];        // [{id, name, best, bestTime, mistakes, hints, attempts, isMe, data}]
+/* Two ways to save scores:
+   GAS    = served as a Google Apps Script web app (public link; players type name + email; rows go to a Google Sheet)
+   Claude = published as a Claude artifact (players are identified by their Claude account) */
+/* PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL BETWEEN THE QUOTES (ends in /exec) */
+const SCORES_API = "PASTE_WEB_APP_URL_HERE";
+const GAME_ID = "full";
+const API_ON = /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(SCORES_API);
+const GAS_NATIVE = !!(window.google && google.script && google.script.run);
+const GAS = GAS_NATIVE || API_ON || /github\.io$/.test(location.hostname);
+let player = null; try{ player = JSON.parse(localStorage.getItem("ol-player")||"null"); }catch(e){}
+let boardLoaded = false, boardError = false;
+const canSave = () => GAS ? !!player : !!(cap.db && cap.uid);
+async function gasCall(fn, arg){
+  if(GAS_NATIVE) return new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](arg));
+  if(!API_ON) throw new Error("not_configured");
+  const r = await fetch(SCORES_API, {method:"POST", body: JSON.stringify({action:fn, game:GAME_ID, arg})});
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error||"failed");
+  return j.data;
+}
+async function loadBoardGas(){
+  try{ const rows = await gasCall("getLeaderboard", player ? player.email : ""); board = rows; boardError = false; }
+  catch(e){ boardError = true; }
+  boardLoaded = true;
+  if(tab!=="play" || screen==="intro" || screen==="results") render();
+}
+let lastResult = null; // {run, rank, saved, saveMsg}
+
+const $ = s => document.querySelector(s);
+const stage = $("#stage");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = sec => { sec=Math.max(0,Math.round(sec)); return String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0"); };
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function newRun(){
+  const rooms = {}; ALL_IDS.forEach(id => rooms[id] = {m:0,h:0,pts:0,clean:0,n:0,t:0});
+  return { start:Date.now(), roomIdx:0, pIdx:0, roomStart:Date.now(), score:0, rooms, digits:{}, p:null, lt:null, codeTry:"" };
+}
+const elapsed = () => S ? (Date.now()-S.start)/1000 : 0;
+const curRoom = () => ROOMS[S.roomIdx];
+
+/* =========================== SOUND =========================== */
+let actx = null;
+function beep(kind){
+  if(!sound) return;
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    const seq = {ok:[[660,.08],[880,.12]], no:[[220,.18]], win:[[523,.1],[659,.1],[784,.1],[1047,.25]], click:[[500,.03]]}[kind]||[];
+    let t = actx.currentTime;
+    seq.forEach(([f,d])=>{ const o=actx.createOscillator(), g=actx.createGain(); o.type = kind==="no"?"square":"triangle"; o.frequency.value=f; g.gain.setValueAtTime(.08,t); g.gain.exponentialRampToValueAtTime(.001,t+d); o.connect(g).connect(actx.destination); o.start(t); o.stop(t+d+.02); t+=d; });
+  }catch(e){}
+}
+
+/* =========================== HUD / TABS =========================== */
+function hud(){
+  const on = tab==="play" && S && !["intro","results"].includes(screen);
+  $("#hud").hidden = !on;
+  if(on){ $("#hud-time").textContent = fmt(elapsed()); $("#hud-score").textContent = S.score+" pts"; }
+}
+function setTab(t){
+  tab = t;
+  ["play","board","admin"].forEach(x => $("#tab-"+x).setAttribute("aria-selected", String(x===t)));
+  render();
+}
+$("#tab-play").onclick = ()=>setTab("play");
+$("#tab-board").onclick = ()=>setTab("board");
+$("#tab-admin").onclick = ()=>setTab("admin");
+$("#hud-sound").onclick = e => { sound=!sound; e.currentTarget.setAttribute("aria-pressed",String(sound)); e.currentTarget.textContent="Sound: "+(sound?"on":"off"); };
+
+let toastT=null;
+function toast(msg){
+  let el = $(".toast"); if(!el){ el=document.createElement("div"); el.className="toast"; el.setAttribute("role","status"); document.body.appendChild(el); }
+  el.textContent = msg; el.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>el.hidden=true, 3800);
+}
+
+/* =========================== RENDER ROOT =========================== */
+function render(){
+  document.documentElement.style.setProperty("--room", tab==="play" && S && screen!=="intro" ? (screen==="vault"||screen==="lightning"||screen==="results" ? VAULT.color : curRoom()?.color || VAULT.color) : "#2456E8");
+  hud();
+  if(tab==="board"){ if(GAS && boardLoaded && !boardError) loadBoardGas.pending || (loadBoardGas.pending=true, loadBoardGas().finally(()=>loadBoardGas.pending=false)); return renderBoard(); }
+  if(tab==="admin") return renderAdmin();
+  ({intro:renderIntro, signin:renderSignin, hub:renderHub, puzzle:renderPuzzle, roomdone:renderRoomDone, lightning:renderLightning, vault:renderVault, results:renderResults})[screen]();
+  stage.querySelector("h1,h2,.prompt")?.setAttribute("tabindex","-1");
+}
+
+function doorsHTML(interactive){
+  const list = [...ROOMS, VAULT];
+  return `<div class="doors">${list.map((r,i)=>{
+    const done = S && (r.id==="vault" ? false : S.digits[r.id]!==undefined);
+    const current = S && i===S.roomIdx && !done;
+    const locked = !S ? i>0 : (!done && !current);
+    const state = done ? "Digit: "+S.digits[r.id] : current ? "Open" : locked ? "Locked" : "First door";
+    return `<div class="door ${r.ink?"ink":""} ${locked?"locked":""} ${done?"done":""}" style="--c:${r.color}">
+      <span class="num">ROOM ${i+1}</span><span class="knob"></span>
+      <div><h3>${esc(r.name)}</h3><div class="topic">${esc(r.topic)}</div></div>
+      ${state?`<span class="state">${state}</span>`:""}</div>`;}).join("")}</div>`;
+}
+
+/* ----- Tooba ----- */
+function toobaBox(text, title){
+  return `<div class="tooba"><span class="av" aria-hidden="true">T</span><div><div class="who">${esc(title||"Tooba")}</div><div class="role">Security Awareness Training Lead</div><p>${esc(text)}</p></div></div>`;
+}
+const BRIEFING = "This is a drill, but the attacks are real ones we see every week. Work through each room, learn what to spot, and get everyone out. Your score and time go on the leaderboard, so go quickly but read the explanations.";
+
+/* ----- Intro ----- */
+function renderIntro(){
+  const best = board.find(b=>b.isMe);
+  stage.innerHTML = `
+  <section class="hero">
+    <div class="panel">
+      <div class="eyebrow">Information security escape room · 15–20 minutes</div>
+      <h1>ACET Solutions is under <span>attack.</span> Find the code. Get out.</h1>
+      <p style="max-width:58ch">Attackers have triggered a ransomware alarm and sealed every door. Solve the security puzzles in each room to collect four digits, then unlock the exit panel in the Shared Meeting Room. Every puzzle teaches something you can use at work tomorrow.</p>
+      ${toobaBox(BRIEFING, "Tooba")}
+      <div class="row" style="margin-top:16px">
+        <button class="btn big" id="start">Start the escape</button>
+        <button class="btn ghost" id="seeboard">See the leaderboard</button>
+      </div>
+      ${best ? `<p class="small muted" style="margin-top:12px">Your best so far: <b>${best.best} pts</b> in ${fmt(best.bestTime)} across ${best.attempts} attempt${best.attempts>1?"s":""}.</p>`:""}
+      ${GAS && player ? `<p class="small muted" style="margin-top:12px">Playing as <b data-pn></b>. <button class="spot" id="notme" style="text-decoration:underline">Not you? Change your details</button></p>` : ""}
+      ${!GAS && !cap.db ? `<p class="notice" style="margin-top:12px" id="nosave">${cap.ready ? "Your score won't be saved in this view. Open the game from the link your organiser shared, signed in to Claude, to appear on the leaderboard." : "Connecting to the leaderboard…"}</p>`:""}
+    </div>
+    <div class="alarm" aria-label="Alarm console">
+      <span class="blink">▲ SECURITY ALERT 09:14</span>
+      <span>Ransomware beacon detected on FIRST FLOOR</span>
+      <span>Doors sealed: 5 / 5</span>
+      <span>Exit code required to release locks</span>
+      <span>Code fragments located in: RECEPTION · IT · HR &amp; ADMIN · ENGINEERING</span>
+      <span class="blink">&gt; awaiting operator_</span>
+    </div>
+  </section>
+  <div class="rules">
+    <div class="rule"><b>100</b><span class="small">points for each puzzle solved</span></div>
+    <div class="rule"><b>−25</b><span class="small">for each wrong attempt</span></div>
+    <div class="rule"><b>−30</b><span class="small">for each hint you open</span></div>
+    <div class="rule"><b>+600</b><span class="small">time bonus, shrinking 1 point every 2 seconds</span></div>
+  </div>
+  ${doorsHTML(false)}`;
+  const pn = stage.querySelector("[data-pn]"); if(pn) pn.textContent = player.name;
+  $("#notme")?.addEventListener("click", ()=>{ screen="signin"; render(); });
+  $("#start").onclick = () => { beep("click"); if(GAS && !player){ screen="signin"; render(); return; } startGame(); };
+  $("#seeboard").onclick = () => setTab("board");
+}
+function startGame(){ S = newRun(); screen="hub"; startClock(); render(); }
+
+/* ----- Player details (public web version) ----- */
+function renderSignin(){
+  stage.innerHTML = `
+  <div class="panel" style="max-width:620px">
+    <div class="eyebrow">Before you start</div>
+    <h2 style="font-family:var(--display);font-weight:400;font-size:26px;margin:6px 0 10px">Check in at reception</h2>
+    <form id="pf" novalidate>
+      <div class="field"><label for="pf-name">Your name</label><input id="pf-name" autocomplete="name" maxlength="80" required value="${esc(player?.name||"")}"><span class="err" id="e-name"></span></div>
+      <div class="field"><label for="pf-email">Work email</label><input id="pf-email" type="email" autocomplete="email" maxlength="120" required value="${esc(player?.email||"")}"><span class="err" id="e-email"></span></div>
+      <div class="field"><label for="pf-org">Company or team (optional)</label><input id="pf-org" autocomplete="organization" maxlength="80" value="${esc(player?.org||"")}"></div>
+      <p class="small muted" style="max-width:56ch">Your name and score appear on the leaderboard. Only the training organiser sees your email address.</p>
+      <div class="row"><button class="btn big" type="submit">Start the escape</button><button class="btn ghost" type="button" id="pf-back">Back</button></div>
+    </form>
+  </div>`;
+  $("#pf-back").onclick = () => { screen="intro"; render(); };
+  $("#pf").addEventListener("submit", e => {
+    e.preventDefault();
+    const name = $("#pf-name").value.trim(), email = $("#pf-email").value.trim().toLowerCase(), org = $("#pf-org").value.trim();
+    $("#e-name").textContent = name.length<2 ? "Enter your name." : "";
+    $("#e-email").textContent = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) ? "" : "Enter a valid email address, for example name@company.com.";
+    if(name.length<2 || $("#e-email").textContent) return;
+    player = {name, email, org};
+    try{ localStorage.setItem("ol-player", JSON.stringify(player)); }catch(err){}
+    beep("click"); loadBoardGas(); startGame();
+  });
+  $("#pf-name").focus();
+}
+
+/* ----- Hub (between rooms) ----- */
+function renderHub(){
+  const r = ROOMS[S.roomIdx];
+  const isVault = S.roomIdx >= ROOMS.length;
+  stage.innerHTML = `
+  <div class="panel">
+    <div class="eyebrow">Floor plan · ${Object.keys(S.digits).length} of 4 digits collected</div>
+    <h2 style="font-family:var(--display);font-weight:400;font-size:26px;margin:6px 0 4px">${isVault ? "All four digits found. Head to the exit panel." : "Next door: "+esc(r.name)}</h2>
+    <div style="margin-top:10px">${toobaBox(isVault ? VAULT.guide : r.guide)}</div>
+    ${doorsHTML(true)}
+    <div class="row" style="margin-top:18px"><button class="btn big" id="enter" style="background:${isVault?VAULT.color:r.color};${r?.ink&&!isVault?"color:var(--ink)":""}">${isVault?"Enter the Shared Meeting Room":"Enter "+esc(r.name)}</button></div>
+  </div>`;
+  $("#enter").onclick = () => {
+    beep("click");
+    S.roomStart = Date.now();
+    if(isVault){ S.lt = {i:0, correct:0, answered:false, left:LT_SECONDS}; screen="lightning"; }
+    else { S.pIdx=0; S.p=freshPuzzleState(); screen="puzzle"; }
+    render();
+  };
+}
+
+/* ----- Puzzle shell ----- */
+function freshPuzzleState(){ return {m:0, h:false, solved:false, sel:{}, found:{}, order:null, wrong:{}}; }
+
+function renderPuzzle(){
+  const r = curRoom(), p = r.puzzles[S.pIdx], st = S.p;
+  const pips = r.puzzles.map((_,i)=>`<span class="pip ${i<S.pIdx?"on":i===S.pIdx?"cur":""}"></span>`).join("");
+  stage.innerHTML = `
+  <div class="panel" id="pz">
+    <div class="roomhead">
+      <div><div class="eyebrow">Room ${S.roomIdx+1} · ${esc(r.topic)}</div><h2>${esc(r.name)}</h2></div>
+      <div class="row"><span class="small muted">Puzzle ${S.pIdx+1} of ${r.puzzles.length}</span><div class="pips">${pips}</div></div>
+    </div>
+    ${p.story?`<div class="story">${esc(p.story)}</div>`:""}
+    <p class="prompt">${esc(p.prompt)}</p>
+    ${p.note?`<p class="small muted" style="margin-top:-8px">${esc(p.note)}</p>`:""}
+    <div id="body"></div>
+    <div id="fb"></div>
+    <div class="actions">
+      <div class="row">${st.solved?"":`<button class="btn ghost" id="hint" ${st.h?"disabled":""}>${st.h?"Hint shown":"Show a hint"}</button><span class="cost">costs 30 points</span>`}</div>
+      <div class="row" id="act"></div>
+    </div>
+  </div>`;
+  if(st.h && !st.solved) showHint(p);
+  $("#hint")?.addEventListener("click", ()=>{ if(st.h) return; st.h=true; S.rooms[r.id].h++; beep("click"); render(); });
+  ({ "choice":puzChoice, "multi":puzMulti, "assign":puzAssign, "order":puzOrder, "hotspot-mail":puzMail, "hotspot-desk":puzDesk })[p.type](p, st);
+  if(st.solved) showNext();
+}
+function showHint(p){ $("#fb").insertAdjacentHTML("beforeend", `<div class="fb hint"><b>Hint</b>${esc(p.hint)}</div>`); }
+function wrong(msg){
+  const r = curRoom(); S.p.m++; S.rooms[r.id].m++; beep("no");
+  const pz = $("#pz"); if(pz && !reduced){ pz.classList.remove("shake"); void pz.offsetWidth; pz.classList.add("shake"); }
+  if(msg) toast(msg);
+}
+function solve(){
+  const r = curRoom(), st = S.p;
+  if(st.solved) return;
+  st.solved = true;
+  const pts = Math.max(20, 100 - 25*st.m - (st.h?30:0));
+  st.pts = pts; S.score += pts;
+  const R = S.rooms[r.id]; R.pts += pts; R.n++; if(st.m===0 && !st.h) R.clean++;
+  beep("ok"); hud();
+}
+function solvedBanner(text){
+  const st = S.p;
+  return `<div class="fb ok pop"><b>Solved. +${st.pts} points${st.m?` (${st.m} wrong attempt${st.m>1?"s":""})`:""}</b>${text?esc(text):""}</div>`;
+}
+function showNext(){
+  const r = curRoom(); const last = S.pIdx === r.puzzles.length-1;
+  $("#act").innerHTML = `<button class="btn" id="next" style="${r.ink?"color:var(--ink)":""}">${last?"Unlock the digit":"Next puzzle"}</button>`;
+  $("#next").onclick = () => {
+    beep("click");
+    if(last){ S.rooms[r.id].t = (Date.now()-S.roomStart)/1000; S.digits[r.id]=r.digit; screen="roomdone"; }
+    else { S.pIdx++; S.p=freshPuzzleState(); }
+    render(); window.scrollTo({top:0, behavior: reduced?"auto":"smooth"});
+  };
+  $("#next").focus();
+}
+
+/* ----- Choice ----- */
+function puzChoice(p, st){
+  const body = $("#body");
+  body.innerHTML = `<div class="opts">${p.options.map((o,i)=>{
+    const cls = st.wrong[i] ? "no" : (st.solved && o.ok) ? "ok" : "";
+    const why = (st.wrong[i] || (st.solved && o.ok)) ? `<span class="why">${esc(o.why)}</span>` : "";
+    return `<button class="opt ${cls}" data-i="${i}" ${st.solved||st.wrong[i]?"disabled":""}><span class="k">${"ABCD"[i]}</span><span>${esc(o.t)}${why}</span></button>`;}).join("")}</div>`;
+  body.querySelectorAll(".opt").forEach(b => b.onclick = () => {
+    const i = +b.dataset.i, o = p.options[i];
+    if(o.ok){ solve(); render(); }
+    else { st.wrong[i]=true; wrong(); render(); }
+  });
+  if(st.solved) $("#fb").insertAdjacentHTML("afterbegin", solvedBanner(""));
+}
+
+/* ----- Multi select ----- */
+function puzMulti(p, st){
+  const body = $("#body");
+  body.innerHTML = `<div class="opts">${p.items.map((o,i)=>{
+    const on = !!st.sel[i];
+    let cls = on ? "sel" : "";
+    if(st.solved) cls = o.ok ? "ok" : "";
+    const why = st.solved ? `<span class="why">${esc(o.why)}</span>` : "";
+    return `<button class="opt ${cls}" role="checkbox" aria-checked="${on}" data-i="${i}" ${st.solved?"disabled":""}><span class="k">${on||(st.solved&&o.ok)?"✓":""}</span><span>${esc(o.t)}${why}</span></button>`;}).join("")}</div>`;
+  if(!st.solved){
+    body.querySelectorAll(".opt").forEach(b => b.onclick = () => { const i=+b.dataset.i; st.sel[i]=!st.sel[i]; beep("click"); render(); });
+    $("#act").innerHTML = `<button class="btn" id="check">Check answer</button>`;
+    $("#check").onclick = () => {
+      const off = p.items.filter((o,i)=>!!st.sel[i]!==o.ok).length;
+      if(off===0){ solve(); render(); }
+      else { wrong(); render(); $("#fb").insertAdjacentHTML("afterbegin", `<div class="fb no"><b>Not yet.</b>${off} of your choices ${off===1?"is":"are"} wrong. Adjust your selection and check again.</div>`); }
+    };
+  } else $("#fb").insertAdjacentHTML("afterbegin", solvedBanner(""));
+}
+
+/* ----- Assign labels ----- */
+function puzAssign(p, st){
+  const body = $("#body");
+  body.innerHTML = `<div class="cards">${p.items.map((it,i)=>{
+    const cls = st.solved ? "ok" : st.wrong[i] ? "no" : "";
+    return `<div class="card ${cls}"><div class="txt">${esc(it.t)}${st.solved?`<span class="why"><b>${esc(it.a)}.</b> ${esc(it.why)}</span>`:""}</div>
+      <div class="seg" role="group" aria-label="Label">${p.labels.map(l=>`<button data-i="${i}" data-l="${esc(l)}" aria-pressed="${st.sel[i]===l}" ${st.solved?"disabled":""}>${esc(l)}</button>`).join("")}</div></div>`;}).join("")}</div>`;
+  if(!st.solved){
+    body.querySelectorAll(".seg button").forEach(b => b.onclick = () => { st.sel[b.dataset.i]=b.dataset.l; delete st.wrong[b.dataset.i]; beep("click"); render(); });
+    $("#act").innerHTML = `<button class="btn" id="check">Check labels</button>`;
+    $("#check").onclick = () => {
+      if(p.items.some((_,i)=>!st.sel[i])) return toast("Label every item before you check.");
+      st.wrong = {}; p.items.forEach((it,i)=>{ if(st.sel[i]!==it.a) st.wrong[i]=true; });
+      const n = Object.keys(st.wrong).length;
+      if(n===0){ solve(); render(); }
+      else { wrong(); render(); $("#fb").insertAdjacentHTML("afterbegin", `<div class="fb no"><b>${n} label${n>1?"s are":" is"} wrong.</b>The red cards need another look.</div>`); }
+    };
+  } else $("#fb").insertAdjacentHTML("afterbegin", solvedBanner(""));
+}
+
+/* ----- Order ----- */
+function puzOrder(p, st){
+  if(!st.order){ const idx=p.items.map((_,i)=>i); do{ idx.sort(()=>Math.random()-.5); } while(idx.every((v,i)=>v===i)); st.order=idx; }
+  const body = $("#body");
+  body.innerHTML = `<div class="cards">${st.order.map((ix,pos)=>`
+    <div class="card ${st.solved?"ok":""}" style="grid-template-columns:1fr"><div class="ord">
+      <span class="n">${pos+1}</span><span class="${p.items[ix].length<34?"pw":""}">${esc(p.items[ix])}</span>
+      <span class="mv">${st.solved?"":`<button data-p="${pos}" data-d="-1" aria-label="Move up" ${pos===0?"disabled":""}>↑</button><button data-p="${pos}" data-d="1" aria-label="Move down" ${pos===st.order.length-1?"disabled":""}>↓</button>`}</span>
+    </div></div>`).join("")}</div>`;
+  if(!st.solved){
+    body.querySelectorAll(".mv button").forEach(b => b.onclick = () => { const a=+b.dataset.p, c=a+(+b.dataset.d); [st.order[a],st.order[c]]=[st.order[c],st.order[a]]; beep("click"); render(); body.querySelector(`.mv button[data-p="${c}"][data-d="${b.dataset.d}"]`)?.focus(); });
+    $("#act").innerHTML = `<button class="btn" id="check">Check order</button>`;
+    $("#check").onclick = () => {
+      const right = st.order.filter((v,i)=>v===i).length;
+      if(right===st.order.length){ solve(); render(); }
+      else { wrong(); render(); $("#fb").insertAdjacentHTML("afterbegin", `<div class="fb no"><b>${right} of ${st.order.length} in the right place.</b>Rearrange and check again.</div>`); }
+    };
+  } else $("#fb").insertAdjacentHTML("afterbegin", solvedBanner(p.why));
+}
+
+/* ----- Hotspots (shared) ----- */
+function hotspotClick(p, st, id){
+  const s = p.spots[id];
+  if(st.found[id]) return;
+  st.found[id] = true;
+  if(s.bad){ beep("ok"); } else { wrong("Not a risk. "+s.why); }
+  const need = Object.entries(p.spots).filter(([,v])=>v.bad).every(([k])=>st.found[k]);
+  if(need) solve();
+  render();
+}
+function foundList(p, st){
+  const bads = Object.entries(p.spots).filter(([,v])=>v.bad);
+  const got = bads.filter(([k])=>st.found[k]);
+  return `<div class="row" style="margin-top:12px"><span class="counter">${got.length} / ${bads.length} found</span></div>
+    ${got.length?`<ol class="found-list">${got.map(([,v])=>`<li>${esc(v.why)}</li>`).join("")}</ol>`:""}`;
+}
+function spot(st, id, html, p){
+  const s=p.spots[id]; const cls = st.found[id] ? (s.bad?"found":"safe") : "";
+  return `<button class="spot ${cls}" data-s="${id}" ${st.found[id]||st.solved?"disabled":""}>${html}</button>`;
+}
+function puzMail(p, st){
+  $("#body").innerHTML = `
+  <div class="mail">
+    <div class="bar">
+      <div><b>From:</b> ${spot(st,"from","Microsoft 365 Support &lt;security@micros0ft-helpdesk.co&gt;",p)}</div>
+      <div><b>To:</b> ${spot(st,"to","you@acetsolutions.com",p)}</div>
+      <div><b>Sent:</b> ${spot(st,"date","Tuesday 09:14",p)}</div>
+      <div><b>Subject:</b> ${spot(st,"subject","URGENT: Your mailbox will be deleted in 2 hours",p)}</div>
+    </div>
+    <div class="body">
+      <div>${spot(st,"greet","Dear user,",p)}</div>
+      <div>We detected unusual sign-in activity on your account. To avoid permanent loss of all emails, verify your identity immediately.</div>
+      <div>${spot(st,"link",`<span class="cta">Verify Account</span> <span class="small muted" style="font-family:var(--mono)">→ http://m365-verify.login-secure.ru/auth</span>`,p)}</div>
+      <div>Attachment: ${spot(st,"attach",`<span style="font-family:var(--mono)">Mailbox_Report.pdf.exe</span>`,p)}</div>
+      <div>${spot(st,"sign","Kind regards,<br>Microsoft Security Team",p)}</div>
+    </div>
+  </div>${foundList(p,st)}`;
+  $("#body").querySelectorAll(".spot").forEach(b => b.onclick = () => hotspotClick(p, st, b.dataset.s));
+  if(st.solved) $("#fb").insertAdjacentHTML("afterbegin", solvedBanner("You found every red flag."));
+}
+function puzDesk(p, st){
+  $("#body").innerHTML = `
+  <div class="desk" role="group" aria-label="Office desk">
+    <div class="wall"></div>
+    ${Object.entries(p.spots).map(([id,s])=>{
+      const cls = st.found[id] ? (s.bad?"found":"safe") : "";
+      return `<button class="item ${cls}" data-s="${id}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;background:${id==="note"?"#FFE45C":id==="laptop"?"#D8E3FF":id==="plant"?"#BDEBC9":""}" ${st.found[id]||st.solved?"disabled":""}>
+        <span>${esc(s.label)}${s.tag?`<span class="tag">${esc(s.tag)}</span>`:""}</span></button>`;}).join("")}
+  </div>${foundList(p,st)}`;
+  $("#body").querySelectorAll(".item").forEach(b => b.onclick = () => hotspotClick(p, st, b.dataset.s));
+  if(st.solved) $("#fb").insertAdjacentHTML("afterbegin", solvedBanner("The desk is clear."));
+}
+
+/* ----- Room complete ----- */
+function renderRoomDone(){
+  const r = curRoom(), R = S.rooms[r.id];
+  stage.innerHTML = `
+  <div class="panel" style="text-align:left">
+    <div class="eyebrow">${esc(r.name)} unlocked · ${fmt(R.t)} in this room</div>
+    <div class="row" style="gap:24px;align-items:center">
+      <div><div class="small muted">Code digit</div><div class="digitbig pop">${r.digit}</div><div class="row small"><span class="dot" style="width:18px;height:18px;background:${r.color};box-shadow:none;border-width:2px"></span> remember this colour</div></div>
+      <div class="lesson" style="flex:1;min-width:240px"><b>What to remember</b><br>${esc(r.lesson)}</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>${R.pts}</b><span>points in this room</span></div>
+      <div class="stat"><b>${R.m}</b><span>wrong attempts</span></div>
+      <div class="stat"><b>${R.h}</b><span>hints used</span></div>
+      <div class="stat"><b>${R.clean}/${r.puzzles.length}</b><span>solved first time</span></div>
+    </div>
+    <button class="btn big" id="go" style="${r.ink?"color:var(--ink)":""}">Back to the floor plan</button>
+  </div>`;
+  beep("win");
+  $("#go").onclick = () => { S.roomIdx++; screen="hub"; render(); };
+}
+
+/* ----- Lightning round ----- */
+function renderLightning(){
+  const L = S.lt, q = VAULT.questions[L.i];
+  stage.innerHTML = `
+  <div class="panel">
+    <div class="roomhead"><div><div class="eyebrow">Room 5 · Lightning round</div><h2>Shared Meeting Room</h2></div>
+      <span class="small muted">Question ${L.i+1} of ${VAULT.questions.length} · 40 points each</span></div>
+    <div class="lt">
+      <div class="meter" aria-hidden="true"><i id="mt" style="width:${(L.left/LT_SECONDS)*100}%"></i></div>
+      <div class="chip" id="lt-left">${L.answered?"–":L.left+"s"}</div>
+      <p class="q">${esc(q.q)}</p>
+      <div class="tf">
+        <button class="btn" data-a="true" style="background:var(--teal)" ${L.answered?"disabled":""}>True</button>
+        <button class="btn" data-a="false" style="background:var(--coral)" ${L.answered?"disabled":""}>False</button>
+      </div>
+      <div id="ltfb" style="width:100%;max-width:620px;text-align:left"></div>
+    </div>
+  </div>`;
+  stage.querySelectorAll(".tf .btn").forEach(b => b.onclick = () => ltAnswer(b.dataset.a==="true"));
+  if(L.answered) ltFeedback();
+  else { clearInterval(ltTimer); ltTimer = setInterval(()=>{ L.left--; const mt=$("#mt"), lf=$("#lt-left"); if(mt) mt.style.width=(L.left/LT_SECONDS*100)+"%"; if(lf) lf.textContent=L.left+"s"; if(L.left<=0) ltAnswer(null); }, 1000); }
+}
+function ltAnswer(a){
+  const L = S.lt, q = VAULT.questions[L.i];
+  if(L.answered) return; clearInterval(ltTimer);
+  L.answered = true; L.lastOk = a===q.a; L.timedOut = a===null;
+  const R = S.rooms.vault; R.n++;
+  if(L.lastOk){ L.correct++; S.score+=40; R.pts+=40; R.clean++; beep("ok"); } else { R.m++; beep("no"); }
+  render();
+}
+function ltFeedback(){
+  const L=S.lt, q=VAULT.questions[L.i], last = L.i===VAULT.questions.length-1;
+  $("#ltfb").innerHTML = `<div class="fb ${L.lastOk?"ok":"no"}"><b>${L.lastOk?"Correct. +40":L.timedOut?"Time's up.":"Not quite."} The answer is ${q.a?"True":"False"}.</b>${esc(q.why)}</div>
+  <div class="actions" style="justify-content:flex-end"><button class="btn" id="ltn">${last?"Go to the exit panel":"Next question"}</button></div>`;
+  $("#ltn").onclick = () => { if(last){ screen="vault"; } else { L.i++; L.answered=false; L.left=LT_SECONDS; } render(); };
+  $("#ltn").focus();
+}
+
+/* ----- Vault code ----- */
+function renderVault(){
+  const order = CODE_ORDER.map(id=>ROOMS.find(r=>r.id===id));
+  stage.innerHTML = `
+  <div class="panel" id="pz">
+    <div class="roomhead"><div><div class="eyebrow">Room 5 · Final lock</div><h2>Exit control panel</h2></div><span class="small muted">Wrong codes cost 25 points</span></div>
+    <div class="vault">
+      <div>
+        <p class="prompt" style="margin-bottom:6px">Enter the digits in the order of the coloured lights.</p>
+        <div class="dots">${order.map(r=>`<span class="dot" style="background:${r.color}" title="${esc(r.name)}"></span>`).join("")}</div>
+        <p class="small muted" style="margin:6px 0 10px">Your collected digits:</p>
+        <div class="collected">${ROOMS.map(r=>`<div><i style="background:${r.color}"></i>${esc(r.name)} <b>${S.digits[r.id]}</b></div>`).join("")}</div>
+      </div>
+      <div>
+        <div class="digits" aria-live="polite">${[0,1,2,3].map(i=>`<span>${S.codeTry[i]||""}</span>`).join("")}</div>
+        <div class="keys">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-k="${n}">${n}</button>`).join("")}<button data-k="del" aria-label="Delete">⌫</button><button data-k="0">0</button><button data-k="ok" style="background:var(--teal);color:#fff" aria-label="Submit code">↵</button></div>
+        <div id="fb"></div>
+      </div>
+    </div>
+  </div>`;
+  stage.querySelectorAll(".keys button").forEach(b => b.onclick = () => vaultKey(b.dataset.k));
+}
+function vaultKey(k){
+  if(k==="del"){ S.codeTry=S.codeTry.slice(0,-1); }
+  else if(k==="ok"){
+    if(S.codeTry.length<4) return toast("Enter all four digits.");
+    if(S.codeTry===VAULT_CODE){ S.score+=100; S.rooms.vault.pts+=100; finish(); return; }
+    S.rooms.vault.m++; S.score=Math.max(0,S.score-25); beep("no");
+    S.codeTry=""; renderVault();
+    const pz=$("#pz"); if(pz&&!reduced) pz.classList.add("shake");
+    $("#fb").innerHTML = `<div class="fb no"><b>Access denied.</b>Match each light's colour to the room with that colour, then enter that room's digit.</div>`;
+    hud(); return;
+  }
+  else if(S.codeTry.length<4){ S.codeTry+=k; beep("click"); }
+  renderVault();
+}
+document.addEventListener("keydown", e => {
+  if(tab!=="play" || screen!=="vault" || e.target.closest("button,input")) return;
+  if(/^[0-9]$/.test(e.key)) vaultKey(e.key);
+  else if(e.key==="Backspace") vaultKey("del");
+  else if(e.key==="Enter") { e.preventDefault(); vaultKey("ok"); }
+});
+
+/* ----- Finish & results ----- */
+function startClock(){ clearInterval(timerId); timerId=setInterval(hud, 1000); }
+async function finish(){
+  clearInterval(timerId); clearInterval(ltTimer);
+  const sec = Math.round(elapsed());
+  S.rooms.vault.t = (Date.now()-S.roomStart)/1000;
+  const base = S.score;
+  const bonus = Math.max(0, 600 - Math.floor(sec/2));
+  const total = base + bonus;
+  const mistakes = ALL_IDS.reduce((a,id)=>a+S.rooms[id].m,0);
+  const hints = ALL_IDS.reduce((a,id)=>a+S.rooms[id].h,0);
+  const rooms = {}; ALL_IDS.forEach(id => { const R=S.rooms[id]; rooms[id] = {m:R.m, h:R.h, pts:R.pts, clean:R.clean, n:R.n, t:Math.round(R.t)}; });
+  const run = { score:total, base, bonus, time:sec, mistakes, hints, rooms, at:new Date().toISOString() };
+  lastResult = { run, saved:false, saveMsg: canSave() ? "Saving your score…" : "Your score wasn't saved because the leaderboard isn't available in this view." };
+  screen="results"; S=null; render(); beep("win"); confetti();
+  if(GAS && player){
+    try{
+      const r = await gasCall("saveRun", {name:player.name, email:player.email, org:player.org||"", run});
+      lastResult.saved = true;
+      lastResult.saveMsg = r.isBest ? (r.plays>1 ? "New personal best saved to the leaderboard." : "Score saved to the leaderboard.") : `Saved. Your best of ${r.best} still stands.`;
+    }catch(e){ lastResult.saveMsg = "Your score couldn't be saved. Check your connection and play again to retry."; }
+    await loadBoardGas();
+    if(tab==="play" && screen==="results") render();
+    return;
+  }
+  if(cap.db && cap.uid){
+    try{
+      const ref = cap.db.doc("scores/"+cap.uid);
+      const prev = (await ref.get()).data() || null;
+      const better = !prev || total > (prev.best||0);
+      const body = {
+        best: better ? total : prev.best,
+        bestTime: better ? sec : prev.bestTime,
+        bestRun: better ? run : prev.bestRun,
+        attempts: (prev?.attempts||0) + 1,
+        firstAt: prev?.firstAt || run.at,
+        lastAt: run.at,
+        lastScore: total,
+        runs: [ ...(prev?.runs||[]), run ].slice(-10)
+      };
+      await ref.set(body);
+      lastResult.saved = true;
+      lastResult.saveMsg = better ? (prev ? "New personal best saved to the leaderboard." : "Score saved to the leaderboard.") : `Saved. Your best of ${prev.best} still stands.`;
+    }catch(e){
+      lastResult.saveMsg = e?.code==="invalid_argument" ? "Your score couldn't be saved: your access to this game is view-only. Ask the organiser for Contributor access." : e?.code==="quota_exceeded" ? "Your score couldn't be saved because the leaderboard is full. Tell the organiser." : "Your score couldn't be saved. Check your connection and play again to retry.";
+    }
+    if(tab==="play" && screen==="results") render();
+  }
+}
+function renderResults(){
+  const run = lastResult.run;
+  const rank = board.findIndex(b=>b.isMe);
+  const allIds = [...ROOMS, VAULT];
+  stage.innerHTML = `
+  <div class="panel">
+    <div class="eyebrow">Doors released · you escaped the ACET Solutions office</div>
+    <div class="row" style="gap:22px;align-items:flex-end;margin:6px 0 4px">
+      <div class="score pop">${run.score}</div>
+      <div class="small muted" style="padding-bottom:10px">${run.base} puzzle points + ${run.bonus} time bonus${rank>=0?`<br><b style="color:var(--ink)">Leaderboard rank #${rank+1} of ${board.length}</b>`:""}</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>${fmt(run.time)}</b><span>total time</span></div>
+      <div class="stat"><b>${run.mistakes}</b><span>wrong attempts</span></div>
+      <div class="stat"><b>${run.hints}</b><span>hints used</span></div>
+      <div class="stat"><b>${ROOMS.reduce((a,r)=>a+run.rooms[r.id].clean,0)}/${ROOMS.reduce((a,r)=>a+r.puzzles.length,0)}</b><span>puzzles solved first time</span></div>
+    </div>
+    <p class="notice" id="savemsg">${esc(lastResult.saveMsg)}</p>
+    <h3 style="margin:18px 0 8px">Your score by topic</h3>
+    <div class="bars">${allIds.map(r=>{ const R=run.rooms[r.id]; const max = r.id==="vault" ? VAULT.questions.length*40+100 : r.puzzles.length*100; const pct=Math.round(R.pts/max*100);
+      return `<div class="barrow"><span>${esc(r.topic)}</span><span class="bartrack"><i style="width:${pct}%;background:${r.color}"></i></span><span class="small" style="font-family:var(--mono);text-align:right">${pct}%</span></div>`;}).join("")}</div>
+    <h3 style="margin:20px 0 8px">Five things Tooba wants you to take back to your desk</h3>
+    <ol style="margin:0;padding-left:20px;display:grid;gap:6px;max-width:72ch">
+      ${ROOMS.map(r=>`<li>${esc(r.lesson)}</li>`).join("")}
+      <li>When in doubt, report it. A quick report is never a waste of the security team's time.</li>
+    </ol>
+    <div class="row" style="margin-top:20px">
+      <button class="btn big" id="again">Play again</button>
+      <button class="btn ghost" id="toboard">View the leaderboard</button>
+    </div>
+  </div>`;
+  $("#again").onclick = () => { S=newRun(); screen="hub"; startClock(); render(); };
+  $("#toboard").onclick = () => setTab("board");
+}
+
+/* =========================== LEADERBOARD =========================== */
+async function profilesFor(ids){
+  if(!cap.user || !ids.length) return {};
+  try{ return await cap.user.profiles(ids); }catch(e){ return {}; }
+}
+async function renderBoard(){
+  const ids = board.map(b=>b.id);
+  stage.innerHTML = `<div class="panel"><div class="eyebrow">Leaderboard · best score per person</div>
+    <h2 style="font-family:var(--display);font-weight:400;font-size:26px;margin:6px 0 14px">Top escapers</h2><div id="lb"></div></div>`;
+  const lb = $("#lb");
+  if(GAS && !boardLoaded){ lb.innerHTML = `<div class="empty">Loading the leaderboard…</div>`; return; }
+  if(GAS && boardError){ lb.innerHTML = `<div class="empty">${!GAS_NATIVE && !API_ON ? "The leaderboard isn't connected yet. The organiser needs to add the scores link to this page." : "The leaderboard couldn't load. Refresh the page to try again."}</div>`; return; }
+  if(!GAS && !cap.db){ lb.innerHTML = `<div class="empty">${cap.ready?"The leaderboard isn't available in this view. Open the game from the shared link while signed in to Claude.":"Loading the leaderboard…"}</div>`; return; }
+  if(!board.length){ lb.innerHTML = `<div class="empty">No one has escaped yet. Finish the game to take first place.</div>`; return; }
+  const ps = GAS ? {} : await profilesFor(ids);
+  if(tab!=="board") return;
+  lb.innerHTML = `<div class="tablewrap"><table>
+    <thead><tr><th>Rank</th><th>Player</th><th class="num">Best score</th><th class="num">Time</th><th class="num">Wrong</th><th class="num">Hints</th><th class="num">Plays</th></tr></thead>
+    <tbody>${board.map((b,i)=>{ const p=ps[b.id]||{};
+      return `<tr class="${b.isMe?"me":""}"><td><span class="medal" style="color:${["#F2B300","#8C96B8","#C7783A"][i]||"var(--muted)"}">${i+1}</span></td>
+      <td><span class="who">${p.avatarUrl?`<img src="${esc(p.avatarUrl)}" alt="">`:""}<span data-name></span>${b.isMe?' <span class="small muted">(you)</span>':""}</span></td>
+      <td class="num"><b>${b.best??"–"}</b></td><td class="num">${fmt(b.bestTime||0)}</td><td class="num">${b.mistakes??"–"}</td><td class="num">${b.hints??"–"}</td><td class="num">${b.attempts||1}</td></tr>`;}).join("")}</tbody></table></div>`;
+  lb.querySelectorAll("[data-name]").forEach((el,i)=>{ el.textContent = board[i].name || (ps[board[i].id]||{}).name || "Colleague"; });
+}
+
+/* =========================== ORGANISER RESULTS =========================== */
+async function renderAdmin(){
+  if(!cap.isOwner){ setTab("play"); return; }
+  stage.innerHTML = `<div class="panel"><div class="eyebrow">Only you can see this tab</div>
+    <h2 style="font-family:var(--display);font-weight:400;font-size:26px;margin:6px 0 4px">Team results</h2>
+    <p class="muted small" style="margin:0 0 16px">Wrong attempts per play show which topics need more training. Figures update live as colleagues finish.</p>
+    <div id="ad"></div></div>`;
+  const ad = $("#ad");
+  if(!board.length){ ad.innerHTML = `<div class="empty">No results yet. Share the game link with Contributor access, and results appear here as each colleague finishes.</div>`; return; }
+  const runs = board.flatMap(b => (b.data.runs||[]));
+  const players = board.length, plays = runs.length;
+  const avg = Math.round(runs.reduce((a,r)=>a+r.score,0)/Math.max(1,plays));
+  const avgT = runs.reduce((a,r)=>a+r.time,0)/Math.max(1,plays);
+  const topic = [...ROOMS, VAULT].map(r => {
+    const m = runs.reduce((a,x)=>a+(x.rooms?.[r.id]?.m||0),0)/Math.max(1,plays);
+    const n = r.id==="vault" ? VAULT.questions.length : r.puzzles.length;
+    const clean = runs.reduce((a,x)=>a+(x.rooms?.[r.id]?.clean||0),0)/Math.max(1,plays*n)*100;
+    return {r, m, clean};
+  });
+  const maxM = Math.max(1, ...topic.map(t=>t.m));
+  const ps = await profilesFor(board.map(b=>b.id));
+  if(tab!=="admin") return;
+  ad.innerHTML = `
+    <div class="stats">
+      <div class="stat"><b>${players}</b><span>players</span></div>
+      <div class="stat"><b>${plays}</b><span>completed plays</span></div>
+      <div class="stat"><b>${avg}</b><span>average score</span></div>
+      <div class="stat"><b>${fmt(avgT)}</b><span>average time</span></div>
+    </div>
+    <h3 style="margin:8px 0 10px">Average wrong attempts per play, by topic</h3>
+    <div class="bars">${topic.map(t=>`<div class="barrow"><span>${esc(t.r.topic)}</span><span class="bartrack"><i style="width:${t.m/maxM*100}%;background:${t.r.color}"></i></span><span class="small" style="font-family:var(--mono);text-align:right">${t.m.toFixed(1)}</span></div>`).join("")}</div>
+    <p class="small muted">First-time accuracy: ${topic.map(t=>`${esc(t.r.topic)} ${Math.round(t.clean)}%`).join(" · ")}</p>
+    <div class="row" style="justify-content:space-between;margin:18px 0 10px"><h3>Every player</h3>${cap.downloads?`<button class="btn ghost" id="csv">Download results as CSV</button>`:""}</div>
+    <div class="tablewrap"><table><thead><tr><th>Player</th><th class="num">Best</th><th class="num">Last</th><th class="num">Plays</th><th class="num">Best time</th>${ROOMS.map(r=>`<th class="num" title="${esc(r.topic)}">${esc(r.short)} wrong</th>`).join("")}<th>Last played</th></tr></thead>
+    <tbody>${board.map(b=>{ const d=b.data, br=d.bestRun||{rooms:{}};
+      return `<tr><td data-n="${esc(b.id)}"></td><td class="num"><b>${d.best}</b></td><td class="num">${d.lastScore??"–"}</td><td class="num">${d.attempts||1}</td><td class="num">${fmt(d.bestTime||0)}</td>${ROOMS.map(r=>`<td class="num">${br.rooms?.[r.id]?.m ?? "–"}</td>`).join("")}<td>${d.lastAt?new Date(d.lastAt).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}):"–"}</td></tr>`;}).join("")}</tbody></table></div>`;
+  ad.querySelectorAll("[data-n]").forEach(el => { el.textContent = (ps[el.dataset.n]||{}).name || "Colleague"; });
+  $("#csv")?.addEventListener("click", async () => {
+    const q = v => `"${String(v??"").replace(/"/g,'""')}"`;
+    const head = ["Player","Best score","Best time (s)","Last score","Plays","Best-run wrong attempts","Best-run hints",...ROOMS.map(r=>r.topic+" wrong"),"Lightning correct","First played","Last played"];
+    const rows = board.map(b=>{ const d=b.data, br=d.bestRun||{rooms:{}};
+      return [(ps[b.id]||{}).name||"Colleague", d.best, d.bestTime, d.lastScore, d.attempts, br.mistakes, br.hints, ...ROOMS.map(r=>br.rooms?.[r.id]?.m), br.rooms?.vault?.clean, d.firstAt, d.lastAt].map(q).join(","); });
+    try{ await cap.downloads.save({filename:"cyber-escape-room-results.csv", data:[head.map(q).join(","),...rows].join("\n")}); }
+    catch(e){ toast("The download didn't complete."); }
+  });
+}
+
+/* =========================== CONFETTI =========================== */
+function confetti(){
+  if(reduced) return;
+  const c=$("#confetti"), x=c.getContext("2d"); c.width=innerWidth; c.height=innerHeight;
+  const cols=["#FF5E3A","#0FA89A","#F2B300","#7650F0","#2456E8"];
+  const ps=Array.from({length:140},()=>({x:Math.random()*c.width,y:-20-Math.random()*c.height*.5,vx:(Math.random()-.5)*3,vy:2+Math.random()*3,r:Math.random()*6+4,a:Math.random()*6,c:cols[Math.floor(Math.random()*5)]}));
+  let f=0; (function step(){ x.clearRect(0,0,c.width,c.height); ps.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.a+=.1; x.save(); x.translate(p.x,p.y); x.rotate(p.a); x.fillStyle=p.c; x.fillRect(-p.r/2,-p.r/4,p.r,p.r/2); x.restore();}); if(++f<220) requestAnimationFrame(step); else x.clearRect(0,0,c.width,c.height); })();
+}
+
+/* =========================== BOOT =========================== */
+render();
+if(GAS){ cap.ready = true; loadBoardGas(); }
+else (async () => {
+  const use = n => window.claude?.use ? window.claude.use(n).catch(()=>null) : Promise.resolve(null);
+  const [db, user, downloads] = await Promise.all([use("db"), use("user"), use("downloads")]);
+  cap.db = db; cap.user = user; cap.downloads = downloads; cap.ready = true;
+  if(user){ try{ cap.uid = await user.id(); cap.isOwner = await user.isOwner(); }catch(e){} }
+  if(!cap.uid) cap.db = null;
+  $("#tab-admin").hidden = !cap.isOwner;
+  if(cap.db){
+    cap.db.collection("scores").orderBy("best","desc").limit(200).onSnapshot(snap => {
+      board = snap.docs.filter(d=>d.exists).map(d=>{ const x=d.data(), br=x.bestRun||{};
+        return {id:d.id, data:x, best:x.best, bestTime:x.bestTime, mistakes:br.mistakes, hints:br.hints, attempts:x.attempts, isMe:d.id===cap.uid}; });
+      if(tab!=="play" || screen==="intro" || screen==="results") render();
+    }, () => {});
+  }
+  if(tab!=="play" || screen==="intro") render();
+})();
+</script>
+</body>
+</html>
